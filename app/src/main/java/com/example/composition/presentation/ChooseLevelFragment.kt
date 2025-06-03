@@ -30,13 +30,13 @@ class ChooseLevelFragment : Fragment() {
             buttonLevelTest.setOnClickListener {
                 launchGameFragment(Level.TEST)
             }
-            buttonLevelTest.setOnClickListener {
+            buttonLevelEasy.setOnClickListener {
                 launchGameFragment(Level.EASY)
             }
-            buttonLevelTest.setOnClickListener {
+            buttonLevelNormal.setOnClickListener {
                 launchGameFragment(Level.NORMAL)
             }
-            buttonLevelTest.setOnClickListener {
+            buttonLevelHard.setOnClickListener {
                 launchGameFragment(Level.HARD)
             }
         }
