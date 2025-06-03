@@ -1,8 +1,8 @@
 package com.example.composition.presentation
 
-import android.R.attr.level
 import android.os.Build
 import android.os.Bundle
+import android.os.Parcelable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,7 +11,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import com.example.composition.databinding.FragmentGameFinishedBinding
 import com.example.composition.domain.entity.GameResult
-import com.example.composition.domain.entity.Level
 
 
 class GameFinishedFragment : Fragment() {
@@ -36,13 +35,15 @@ class GameFinishedFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        requireActivity().onBackPressedDispatcher.addCallback(
-            owner = viewLifecycleOwner,
-            onBackPressedCallback = object : OnBackPressedCallback(true){
-                override fun handleOnBackPressed() {
-                    retryGame()
-                }
-            })
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                retryGame()
+            }
+        }
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, callback)
+        binding.buttonRetry.setOnClickListener {
+            retryGame()
+        }
     }
 
     override fun onDestroyView() {
@@ -51,17 +52,25 @@ class GameFinishedFragment : Fragment() {
     }
 
     private fun parseArgs() {
-        gameResult = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            requireArguments().getSerializable(KEY_GAME_RESULT, GameResult::class.java)
-                ?: throw RuntimeException("GameResult is null")
-        } else {
-            requireArguments().getSerializable(KEY_GAME_RESULT) as? GameResult
-                ?: throw RuntimeException("GameResult is null")
+        requireArguments().getParcelable<GameResult>(KEY_GAME_RESULT)?.let {
+            gameResult = it
         }
     }
 
+    private inline fun <reified T : Parcelable> Bundle.parcelable(key: String): T? =
+        when {
+            Build.VERSION.SDK_INT > Build.VERSION_CODES.TIRAMISU -> getParcelable(
+                key,
+                T::class.java
+            )
+
+            else -> @Suppress("DEPRECATION") getParcelable(key) as? T
+        }
+
     private fun retryGame() {
-        requireActivity().supportFragmentManager.popBackStack(GameFragment.NAME,FragmentManager.POP_BACK_STACK_INCLUSIVE)
+        requireActivity().supportFragmentManager.popBackStack(
+            GameFragment.NAME, FragmentManager.POP_BACK_STACK_INCLUSIVE
+        )
     }
 
     companion object {
@@ -70,9 +79,13 @@ class GameFinishedFragment : Fragment() {
         fun newInstance(gameResult: GameResult): GameFinishedFragment {
             return GameFinishedFragment().apply {
                 arguments = Bundle().apply {
-                    putSerializable(KEY_GAME_RESULT, gameResult)
+                    putParcelable(
+                        KEY_GAME_RESULT,
+                        gameResult
+                    )
                 }
             }
         }
+
     }
 }

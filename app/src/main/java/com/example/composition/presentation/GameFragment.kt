@@ -2,6 +2,7 @@ package com.example.composition.presentation
 
 import android.os.Build
 import android.os.Bundle
+import android.os.Parcelable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -55,12 +56,19 @@ class GameFragment : Fragment() {
     }
 
     private fun parseArgs() {
-        level = if (Build.VERSION.SDK_INT > Build.VERSION_CODES.TIRAMISU) {
-            requireArguments().getSerializable(KEY_LEVEL, Level::class.java)
-        } else {
-            requireArguments().getSerializable(KEY_LEVEL) as? Level
-        } ?: throw RuntimeException("Level is null")
+        requireArguments().getParcelable<Level>(KEY_LEVEL)?.let { it ->
+            level = it
+        }
     }
+
+    private inline fun <reified T : Parcelable> Bundle.parcelable(key: String): T? =
+        when {
+            Build.VERSION.SDK_INT > Build.VERSION_CODES.TIRAMISU -> getParcelable(
+                key,
+                T::class.java
+            )
+            else -> @Suppress("DEPRECATION") getParcelable(key) as? T
+        }
 
     private fun launchGameFinishedFragment(gameResult: GameResult) {
         requireActivity().supportFragmentManager.beginTransaction()
@@ -76,7 +84,7 @@ class GameFragment : Fragment() {
         fun newInstance(level: Level): GameFragment {
             return GameFragment().apply {
                 arguments = Bundle().apply {
-                    putSerializable(KEY_LEVEL, level)
+                    putParcelable(KEY_LEVEL, level)
                 }
             }
         }
